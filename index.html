@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Markdown Editor</title>
+		<link rel="stylesheet" type="text/css" href="app.css">
+	</head>
+	<body>
+		<div id="editor"></div>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/0.3.2/marked.min.js"></script>
+		<script src="https://unpkg.com/mithril/mithril.js"></script>
+		<script>
+			//model
+			var state = {
+				text: "# Markdown Editor\n\nType on the left panel and see the result on the right panel",
+				update: function(value) {
+					state.text = value;
+					state.linenum = lineit(value);
+				},
+				itext: 'textarea.input',
+				ptext: '.preview',
+				linenum: ''
+			}
+			
+			function switchit() {
+				if (state.ptext == '.preview.hidden') {
+					state.ptext = '.preview';
+					state.itext = 'textarea.input';
+				} else {
+					state.ptext = '.preview.hidden';
+					state.itext = 'textarea.input.full';
+				}
+			}
+			
+			function lineit(text) {
+				//console.log(text, text.split('\n'));
+				var number = text.split('\n').length;
+				var str = '';
+				/*https://stackoverflow.com/questions/1907605/html-css-js-how-to-make-an-illusion-of-a-textarea-with-line-numbers*/
+				for(var i=0; i < number; i++){
+					str = str + (i +'\r\n');
+				}
+				return str;
+			}
+			
+			function syncit(e) {
+				//console.log(e);
+				
+				var factor = e.target.scrollTop / (e.target.scrollHeight - e.target.offsetHeight);
+				
+				var lines = document.querySelector('.lines');
+				var preview = document.querySelector('.preview');
+				var input = document.querySelector('.input');
+				
+				switch (e.target.classList[0]) {
+					case 'input':
+						//console.log('It is .input');
+						lines.scrollTop = factor * (lines.scrollHeight - lines.offsetHeight);
+						/*https://stackoverflow.com/questions/34952298/scroll-display-along-with-scroll-on-textarea*/
+						preview.scrollTop = factor * (preview.scrollHeight - preview.offsetHeight);
+						break;
+					case 'preview':
+						lines.scrollTop = factor * (lines.scrollHeight - lines.offsetHeight);
+						input.scrollTop = factor * (input.scrollHeight - input.offsetHeight);
+						break;
+					default:
+						console.log(e.target.classList[0]);
+				}
+				//document.querySelector('.preview'
+			}
+			
+			//view
+			var Editor = {
+				view: function() {
+					return [
+						m('textarea.lines[readonly=true]', {value: state.linenum}),
+						m(state.itext, {
+							oninput: m.withAttr("value", state.update),
+							onscroll: syncit,
+							value: state.text
+						}),
+						m("button", {onclick: switchit}, "Toggle preview"),
+						m(state.ptext, m.trust('<div class="scroll">'+marked(state.text)+'</div>'))
+						//m(state.ptext, m.trust(marked(state.text)))
+						//m(".preview", m.trust(marked(state.text)))
+					]
+				},
+				oninit: function(vnode) {
+					state.linenum = lineit(state.text);					
+				},
+				oncreate: function(vnode) {
+					document.querySelector('.preview').addEventListener('scroll', syncit, false);
+				}
+			}
+
+			m.mount(document.getElementById("editor"), Editor)
+		</script>
+	</body>
+</html>

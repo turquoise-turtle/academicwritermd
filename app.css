@@ -1,0 +1,22 @@
+html,body {height:100%;margin:0;}
+
+h1,h2,h3,h4,h5,h6,p {margin:0 0 10px;}
+
+#editor {display:flex;height:100%;}
+
+.input,.preview {box-sizing:border-box;height:100%;margin:0;padding:10px;width:50%;}
+
+/*https://www.quackit.com/html/codes/hide_scrollbar.cfm */
+.lines {padding-top:10px; width: 4em; resize:none; outline:none; border:0; text-align: right; font-family:monospace; overflow:hidden}
+
+.input {border:0;border-right:1px solid #ccc;outline:none;resize:none;}
+
+.yo {width: 50%;}
+
+.preview {width: 50%; font-family:sans-serif; overflow: auto; word-wrap:break-word}
+
+.hidden {display: none}
+
+.full {width:100%;}
+
+.scroll {overflow:auto;}
