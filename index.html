@@ -1,11 +1,13 @@
 <!doctype html>
 <html>
 	<head>
+		<!-- thanks to https://github.com/MithrilJS/mithril.js/blob/next/examples/editor/index.html for some of the code -->
 		<title>Markdown Editor</title>
 		<link rel="stylesheet" type="text/css" href="app.css">
 	</head>
 	<body>
-		<div id="editor"></div>
+		<div id="app"></div>
+		<script src="a11y-dialog.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/0.3.2/marked.min.js"></script>
 		<script src="https://unpkg.com/mithril/mithril.js"></script>
 		<script>
@@ -14,85 +16,135 @@
 				text: "# Markdown Editor\n\nType on the left panel and see the result on the right panel",
 				update: function(value) {
 					state.text = value;
-					state.linenum = lineit(value);
+					state.updatelines();
 				},
-				itext: 'textarea.input',
+				lineupdate: function(value) {
+					state.lines = false;
+					state.linetext = value;
+				},
 				ptext: '.preview',
-				linenum: ''
-			}
-			
-			function switchit() {
-				if (state.ptext == '.preview.hidden') {
-					state.ptext = '.preview';
-					state.itext = 'textarea.input';
-				} else {
-					state.ptext = '.preview.hidden';
-					state.itext = 'textarea.input.full';
+				linenum: '',
+				linetext: '',
+				lines: true,
+				switchit: function() {
+					if (state.ptext == '.preview.hidden') {
+						state.ptext = '.preview';
+						state.itext = 'textarea.input';
+					} else {
+						state.ptext = '.preview.hidden';
+						state.itext = 'textarea.input.full';
+					}
+				},
+				updatelines: function() {
+					var number = state.text.split('\n').length;
+					if (state.lines) {
+						var str = '';
+						/*https://stackoverflow.com/questions/1907605/html-css-js-how-to-make-an-illusion-of-a-textarea-with-line-numbers*/
+						for(var i=0; i < number; i++){
+							str = str + i +'\r\n';
+						}
+						state.linetext = str;
+					} else {
+						var str = state.linetext;
+						//console.log(state.text.split('\n'));
+						str = str.slice(0, number);
+					}
+					state.linenum = str;
+					if (document.querySelector('#mirror')) {
+						var mirror = document.querySelector('#mirror');
+						mirror.innerHTML = String(state.text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br />')) + '.<br/>.';
+					}
+				},
+				syncit: function(e) {
+					/*https://stackoverflow.com/questions/34952298/scroll-display-along-with-scroll-on-textarea*/
+					var factor = e.target.scrollTop / (e.target.scrollHeight - e.target.offsetHeight);
+					var lines = document.querySelector('.lines');
+					var preview = document.querySelector('.preview');
+					var input = document.querySelector('.input');
+					switch (e.target.classList[0]) {
+						case 'input':
+							lines.scrollTop = factor * (lines.scrollHeight - lines.offsetHeight);
+							preview.scrollTop = factor * (preview.scrollHeight - preview.offsetHeight);
+							break;
+						case 'preview':
+							lines.scrollTop = factor * (lines.scrollHeight - lines.offsetHeight);
+							input.scrollTop = factor * (input.scrollHeight - input.offsetHeight);
+							break;
+						default:
+							console.log(e.target.classList[0]);
+					}
 				}
 			}
 			
-			function lineit(text) {
-				//console.log(text, text.split('\n'));
-				var number = text.split('\n').length;
-				var str = '';
-				/*https://stackoverflow.com/questions/1907605/html-css-js-how-to-make-an-illusion-of-a-textarea-with-line-numbers*/
-				for(var i=0; i < number; i++){
-					str = str + (i +'\r\n');
-				}
-				return str;
-			}
-			
-			function syncit(e) {
-				//console.log(e);
-				
-				var factor = e.target.scrollTop / (e.target.scrollHeight - e.target.offsetHeight);
-				
-				var lines = document.querySelector('.lines');
-				var preview = document.querySelector('.preview');
-				var input = document.querySelector('.input');
-				
-				switch (e.target.classList[0]) {
-					case 'input':
-						//console.log('It is .input');
-						lines.scrollTop = factor * (lines.scrollHeight - lines.offsetHeight);
-						/*https://stackoverflow.com/questions/34952298/scroll-display-along-with-scroll-on-textarea*/
-						preview.scrollTop = factor * (preview.scrollHeight - preview.offsetHeight);
-						break;
-					case 'preview':
-						lines.scrollTop = factor * (lines.scrollHeight - lines.offsetHeight);
-						input.scrollTop = factor * (input.scrollHeight - input.offsetHeight);
-						break;
-					default:
-						console.log(e.target.classList[0]);
-				}
-				//document.querySelector('.preview'
-			}
 			
 			//view
-			var Editor = {
+			var App = {
 				view: function() {
 					return [
-						m('textarea.lines[readonly=true]', {value: state.linenum}),
-						m(state.itext, {
-							oninput: m.withAttr("value", state.update),
-							onscroll: syncit,
-							value: state.text
-						}),
-						m("button", {onclick: switchit}, "Toggle preview"),
-						m(state.ptext, m.trust('<div class="scroll">'+marked(state.text)+'</div>'))
-						//m(state.ptext, m.trust(marked(state.text)))
-						//m(".preview", m.trust(marked(state.text)))
+						m('#content', [
+							m('#top', [
+								m('h1.inline', 'AcademicMD'),
+								m('button.button', {onclick: state.switchit}, "Toggle preview"),
+								m("button.button[data-a11y-dialog-show='my-accessible-dialog'][type='button']", "Show config")
+								//m('button', {onclick: state.showmodal}, 'Toggle modal')
+							]),
+							m('#editor', [
+								m('textarea.lines[readonly=true]', {value: state.linenum}),
+								m('textarea.input', {
+									oninput: m.withAttr("value", state.update),
+									onscroll: state.syncit,
+									value: state.text
+								}),
+								m(state.ptext, m.trust(marked(state.text)))
+							]),
+						]),
+						m(".dialog[id='my-accessible-dialog']", [
+							m(".dialog-overlay[data-a11y-dialog-hide=''][tabindex='-1']"),
+							m("dialog.dialog-content[aria-describedby='dialogDescription'][aria-labelledby='dialogTitle']", [
+								m("button.dialog-close[aria-label='Close this dialog window'][data-a11y-dialog-hide='']", m.trust("&times;")),
+								m("h1[id='dialogTitle']", "Sidebar Config"),
+								m("p[id='dialogDescription']", "Fill in the textarea with the sidebar content. Use one character per line and remember to put a dash '-' for empty lines"),
+								m("textarea[id='config']", {
+									oninput: m.withAttr("value", state.lineupdate),
+									value: state.linetext
+								})
+							])
+						]),
+						m('textarea[id="mirror"]')
 					]
 				},
 				oninit: function(vnode) {
-					state.linenum = lineit(state.text);					
+					state.updatelines();					
 				},
 				oncreate: function(vnode) {
-					document.querySelector('.preview').addEventListener('scroll', syncit, false);
+					document.querySelector('.preview').addEventListener('scroll', state.syncit);
+					
+					var dialogEl = document.getElementById('my-accessible-dialog');
+					var mainEl = document.getElementById('content');
+					var dialog = new window.A11yDialog(dialogEl, mainEl);
+
+					dialog.on('show', function (dialogEl, triggerEl) {
+					  //console.log(dialogEl);
+					  //console.log(triggerEl);
+					});
+
+					// To manually control the dialog:
+					// dialog.show()
+					// dialog.hide()
+					// dialog.destroy()
+					
+					var mirror = document.querySelector('#mirror');
+					var original = document.querySelector('.input');
+					mirror.innerHTML = String(state.text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br />')) + '.<br/>.';
+					mirror.style.padding = original.style.padding;
+					mirror.style.width = original.style.width;
+					mirror.style.fontFamily = original.style.fontFamily;
+					mirror.style.fontSize = original.style.fontSize;
+					mirror.style.lineHeight = original.style.lineHeight;
 				}
 			}
 
-			m.mount(document.getElementById("editor"), Editor)
+			m.mount(document.getElementById("app"), App)
 		</script>
 	</body>
 </html>

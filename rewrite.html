@@ -1,0 +1,132 @@
+<style>
+	html,body {
+		height:100%;
+		margin:0;
+		font-family: sans-serif;
+	}
+	#app {
+		height: 100%;
+	}
+	.editor {
+		display: flex;
+		height: 90%;
+		border-top: 0.5px solid black;
+	}
+	.gutter {
+/* 		width: 2em; */
+		font-size: 1em;
+		/*https://www.quackit.com/html/codes/hide_scrollbar.cfm */
+		padding-top:0;
+		width: 4em;
+		resize:none;
+		outline:none;
+		border:0;
+		text-align: right;
+/* 		font-family:monospace; */
+		overflow:hidden;
+	}
+	.half {
+		width: calc(calc(100% - 4em)/2);
+	}
+	.input {
+		width: 99%;
+/* 		max-height: 54px; */
+		overflow: scroll;
+	}
+	.preview {
+		font-family: serif;
+		overflow: scroll;
+	}
+	#input {
+		height: 100%;
+	}
+	.clone {
+		opacity: 0;
+	}
+	
+</style>
+<!-- <div id="input" class="input" contenteditable></div> -->
+<!-- <div class="input clone" contenteditable></div> -->
+<div id="app"></div>
+<script src="a11y-dialog.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/0.3.2/marked.min.js"></script>
+<script src="https://unpkg.com/mithril/mithril.js"></script>
+<script>
+	var state = {
+		content: '# Markdown Editor\n\nType on the left panel and see the result on the right panel',
+// 		gutter: [1,2,3,4,5,6,7],
+		gutter: ['I', 'I', ' ', 'T', 'S', ' ','E',' ', 'A', 'L', ' ', 'T', 'S', ' ','E',' ', 'A', 'L', ' ', 'T', 'S', ' ','E',' ', 'A', 'L', ' ', 'T', 'S', ' ','E',' ', 'A', 'L', ' ', 'E', 'E'],
+		guttershowing: '',
+		update: function(value) {
+			state.content = value;
+			state.updategutter();
+		},
+		updategutter: function() {
+// 			console.log('run')
+			var clone = document.querySelector('.clone');
+			var lines = state.content.split('\n');
+			if (lines[lines.length-1] == '') {
+// 				console.log('yep')
+				lines.splice(lines.length-1);
+			}
+			state.guttershowing = '';
+			for (var i=0; i < lines.length; i++) {
+				clone.innerText = lines[i];
+				var howmanymore = clone.offsetHeight / 18 -1;
+				state.guttershowing = state.guttershowing + /*(i+1)*/state.gutter[i] + '\n' + '\n'.repeat(howmanymore);
+			}
+// 			console.log(state.guttershowing)
+		},
+		syncscroll: function(e) {
+		/*https://stackoverflow.com/questions/34952298/scroll-display-along-with-scroll-on-textarea*/
+			var factor = e.target.scrollTop / (e.target.scrollHeight - e.target.offsetHeight);
+			var gutter = document.querySelector('.gutter');
+			var preview = document.querySelector('.preview');
+			var input = document.querySelector('.input');
+			switch (e.target.classList[0]) {
+				case 'input':
+					gutter.scrollTop = factor * (gutter.scrollHeight - gutter.offsetHeight);
+					preview.scrollTop = factor * (preview.scrollHeight - preview.offsetHeight);
+					break;
+				case 'preview':
+					preview.scrollTop = factor * (lines.scrollHeight - lines.offsetHeight);
+					input.scrollTop = factor * (input.scrollHeight - input.offsetHeight);
+					break;
+				default:
+					console.log(e.target.classList[0]);
+			}
+		}
+	};
+	
+	var App = {
+		view: function() {
+			return [
+				//top
+				m('header', [
+					m('h1', 'Text editor')
+				]),
+				//editor
+				m('section.editor', [
+					m('textarea.gutter[readonly][style="height:auto"]', {
+						innerText: state.guttershowing
+					}),
+					m('div.half', [
+						m('div#input.input[contenteditable]',{
+							oninput: m.withAttr('innerText', state.update),
+							onscroll: state.syncscroll
+							//innerText: state.content
+						}),
+						m('div.input.clone[contenteditable]'),
+					]),
+					m('div.preview.half', m.trust(marked(state.content)))
+				])
+			]
+		},
+		oncreate: function() {
+			document.querySelector('#input').innerText = state.content;
+			state.updategutter()
+			document.querySelector('.gutter').innerText = state.guttershowing;
+		}
+	}
+	m.mount(document.getElementById("app"), App)
+</script>

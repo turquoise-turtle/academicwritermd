@@ -1,8 +1,14 @@
 html,body {height:100%;margin:0;}
 
+#content,#app {height: 100%;}
+
+#top {height: 10%;}
+
+.inline {display:inline}
+
 h1,h2,h3,h4,h5,h6,p {margin:0 0 10px;}
 
-#editor {display:flex;height:100%;}
+#editor {display:flex;height:90%; border-top: 0.5px solid black }
 
 .input,.preview {box-sizing:border-box;height:100%;margin:0;padding:10px;width:50%;}
 
@@ -16,7 +22,84 @@ h1,h2,h3,h4,h5,h6,p {margin:0 0 10px;}
 .preview {width: 50%; font-family:sans-serif; overflow: auto; word-wrap:break-word}
 
 .hidden {display: none}
+.show {display: block}
 
 .full {width:100%;}
 
-.scroll {overflow:auto;}
+.button {
+    background-color: #4CAF50; /* Green */
+    border: none;
+    color: white;
+    /*padding: 15px 32px;*/
+    padding: 1em 2em;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-weight: bold;
+    margin: 0.5em;
+    /*font-size: 16px;*/
+    cursor: pointer;
+}
+
+#mirror {
+	display:none;
+	word-wrap: break-work;
+	white-space: normal;
+	outline: none;
+}
+
+
+#config {width:95%; resize:none; font-family:monospace;}
+@media screen and (min-height: 30em) {
+	#config {height:20em;}
+}
+
+
+dialog {width:20rem;}
+
+[data-a11y-dialog-native] .dialog-overlay {
+	display: none;
+}
+dialog[open] {
+	display: block;
+}
+.dialog[aria-hidden="true"] {
+	display: none;
+}
+.dialog-overlay {
+  z-index: 2;
+  background-color: rgba(0, 0, 0, 0.66);
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.66);
+}
+.dialog-content {
+  background-color: rgb(255, 255, 255);
+  z-index: 3;
+  position: fixed;
+  top: 25%;
+  left: 50%;
+  transform: translate(-50%, -25%);
+  margin: 0;
+}
+#dialogTitle {font-weight: bold; font-family:sans-serif;}
+.dialog-close {
+  position: absolute;
+  top: 0.5em;
+  right: 0.5em;
+  border: 0;
+  padding: 0;
+  background-color: transparent;
+  font-weight: bold;
+  font-size: 1.25em;
+  width: 1.2em;
+  height: 1.2em;
+  text-align: center;
+  cursor: pointer;
+  transition: 0.15s;
+}
